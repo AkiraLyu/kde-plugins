@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Apply the packaged KDE settings to the user running this command.
+set -euo pipefail
+((EUID != 0)) || { echo 'Run kde-config as the desktop user.' >&2; exit 1; }
+(($# == 0)) || { echo 'Usage: kde-config' >&2; exit 1; }
+
+config_dir=/usr/share/kde-config
+data_dir=${XDG_DATA_HOME:-$HOME/.local/share}
+kate_desktop="$data_dir/applications/org.kde.kate.desktop"
+if [[ ! -f $kate_desktop ]]; then
+    install -Dm644 "$config_dir/org.kde.kate.desktop" "$kate_desktop"
+fi
+# Kate writes session action identifiers containing spaces; use its native
+# config writer so the application-owned session entries remain intact.
+kwriteconfig6 --file "$kate_desktop" --group 'Desktop Entry' \
+    --key Exec 'kate-translucent -b %U'
+mkdir -p "$HOME/.local/bin"
+ln -sfn /usr/bin/kate-translucent "$HOME/.local/bin/kate"
+
+for file in kwinrc darklyrc; do
+    group=
+    while IFS= read -r line || [[ -n $line ]]; do
+        case "$line" in
+            ''|\#*) continue ;;
+            \[*\]) group=${line:1:${#line}-2} ;;
+            *=*) kwriteconfig6 --file "$file" --group "$group" \
+                --key "${line%%=*}" --notify "${line#*=}" ;;
+            *) printf 'Invalid line in %s: %s\n' "$file" "$line" >&2; exit 1 ;;
+        esac
+    done < "$config_dir/$file"
+done
+
+if command -v flatpak >/dev/null && flatpak info com.tencent.WeChat >/dev/null 2>&1; then
+    flatpak override --user --nosocket=wayland --socket=x11 \
+        --env=QT_QPA_PLATFORM=xcb com.tencent.WeChat
+fi
+darkly-theme apply
+wechat-glass-control enable
+systemctl --user daemon-reload

@@ -1,0 +1,4 @@
+module org.kde.plasma.appgrid.core
+plugin appgridcoreplugin
+classname AppGridCorePlugin
+typeinfo appgridcore.qmltypes

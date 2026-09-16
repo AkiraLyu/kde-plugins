@@ -1,0 +1,26 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "AppGrid contributors"
+            }
+        ],
+        "Category": "Application Launchers",
+        "Description": "A GNOME-style full-screen application grid for KDE Plasma 6",
+        "Description[zh_CN]": "适用于 KDE Plasma 6 的 GNOME 风格全屏应用网格",
+        "FormFactors": [
+            "desktop"
+        ],
+        "Icon": "view-app-grid-symbolic",
+        "Id": "org.kde.plasma.appgrid",
+        "License": "GPL-2.0-or-later",
+        "Name": "App Grid",
+        "Name[zh_CN]": "应用网格",
+        "Version": "0.3.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.launchermenu"
+    ]
+}

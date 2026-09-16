@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name="" />
+    <group name="General">
+        <entry name="layoutData" type="String">
+            <default>{"version":1,"items":[]}</default>
+        </entry>
+        <entry name="iconSize" type="Int">
+            <default>96</default>
+        </entry>
+        <entry name="forceDarkMode" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="enableBackgroundBlur" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="useCustomBackgroundColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="backgroundColor" type="Color">
+            <default>#1d2028</default>
+        </entry>
+        <entry name="backgroundOpacity" type="Int">
+            <default>85</default>
+            <min>0</min>
+            <max>100</max>
+        </entry>
+        <entry name="showDescriptionsInSearch" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="enableKRunnerSearch" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="rememberApplicationUsage" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="launchHistoryData" type="String">
+            <default></default>
+        </entry>
+        <entry name="reduceAnimations" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="hiddenApplications" type="StringList">
+            <default></default>
+        </entry>
+    </group>
+</kcfg>

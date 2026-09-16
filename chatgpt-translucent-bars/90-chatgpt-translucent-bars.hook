@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = chatgpt-desktop
+Target = chatgpt-translucent-bars
+
+[Action]
+Description = Apply ChatGPT translucent bars
+When = PostTransaction
+Depends = chatgpt-desktop
+Exec = /usr/bin/python /usr/lib/chatgpt-translucent-bars/patch.py /usr/lib/chatgpt/resources/app.asar

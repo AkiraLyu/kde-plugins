@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Name=Darkly Light / Dark
+Name[zh_CN]=Darkly 明暗切换
+Comment=Switch between LayanLight and Layan with the Darkly style
+Exec=darkly-theme toggle
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;
+Actions=Light;Dark;
+
+[Desktop Action Light]
+Name=Light
+Name[zh_CN]=亮色
+Exec=darkly-theme light
+
+[Desktop Action Dark]
+Name=Dark
+Name[zh_CN]=暗色
+Exec=darkly-theme dark

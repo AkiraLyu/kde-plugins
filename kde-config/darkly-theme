@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# 固定使用 Darkly；亮色为 LayanLight，暗色为 Layan。
+# 只同步 KDE、GTK 的明暗偏好和 Fish 读取的 mode 文件。
+set -euo pipefail
+
+# theme-sync.service 使用安静模式，只隐藏正常输出。
+if [[ ${1:-} == --quiet ]]; then
+    shift
+    exec > /dev/null
+fi
+(($# <= 1)) || { echo '用法：darkly-theme [--quiet] light|dark|toggle|apply|status' >&2; exit 1; }
+action=${1:-status}
+case "$action" in
+    light|dark|toggle|apply|status) ;;
+    --help|-h)
+        echo '用法：darkly-theme [--quiet] light|dark|toggle|apply|status'
+        echo 'apply 重新应用保存的模式；首次使用默认亮色。'
+        exit 0
+        ;;
+    *) printf '不支持的操作：%s\n' "$action" >&2; exit 1 ;;
+esac
+
+# 只保存一个明暗值。明确指定 light/dark 时也可以修正无效的旧状态。
+mode_file="${XDG_STATE_HOME:-$HOME/.local/state}/theme/mode"
+mode=light
+if [[ $action == light || $action == dark ]]; then
+    mode=$action
+else
+    if [[ -f $mode_file ]]; then mode=$(cat -- "$mode_file"); fi
+    [[ $mode == light || $mode == dark ]] || {
+        echo 'mode 文件只能是 light 或 dark；请运行 darkly-theme light 或 darkly-theme dark。' >&2
+        exit 1
+    }
+    if [[ $action == toggle ]]; then
+        if [[ $mode == light ]]; then mode=dark; else mode=light; fi
+    fi
+fi
+
+if [[ $action == status ]]; then
+    printf '保存模式：%s\n当前 KDE 配色：%s\n' "$mode" \
+        "$(kreadconfig6 --file kdeglobals --group General --key ColorScheme --default 未设置)"
+    exit 0
+fi
+
+scheme=LayanLight
+prefer_dark=false
+if [[ $mode == dark ]]; then scheme=Layan; prefer_dark=true; fi
+
+# 使用 KDE 自带工具切换配色和 Plasma 样式，不套用会改动桌面布局的全局主题。
+# 工具对已经选中的主题可能返回非零，因此只在选择不同时调用。
+if [[ $(kreadconfig6 --file kdeglobals --group General --key ColorScheme) != "$scheme" ]]; then
+    plasma-apply-colorscheme "$scheme"
+fi
+kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle --notify Darkly
+if [[ $(kreadconfig6 --file plasmarc --group Theme --key name) != darkly-translucent ]]; then
+    plasma-apply-desktoptheme darkly-translucent
+fi
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library --notify org.kde.darkly
+kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme --notify 'Darkly 微风'
+qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+
+# 保持现有 GTK 主题、图标和字体，仅同步新旧 GTK 应用读取的明暗偏好。
+gsettings set org.gnome.desktop.interface color-scheme "prefer-$mode"
+for version in 3.0 4.0; do
+    kwriteconfig6 --file "gtk-$version/settings.ini" --group Settings \
+        --key gtk-application-prefer-dark-theme --type bool "$prefer_dark"
+done
+
+# 成功后保存，Fish 函数会重新加载当前终端的提示符和 ls 配色。
+mkdir -p -- "${mode_file%/*}"
+printf '%s\n' "$mode" > "$mode_file"
+printf '已应用 Darkly %s（%s）。\n' "$mode" "$scheme"

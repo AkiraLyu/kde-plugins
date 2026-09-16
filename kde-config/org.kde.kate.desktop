@@ -1,0 +1,19 @@
+[Desktop Entry]
+Categories=Qt;KDE;Development;TextEditor;
+Comment[zh_CN]=KDE 多功能文本编辑器
+Comment=KDE Advanced Text Editor
+Exec=kate-translucent -b %U
+GenericName[zh_CN]=多功能文本编辑器
+GenericName=Advanced Text Editor
+Icon=kate
+InitialPreference=9
+Keywords[zh_CN]=text;txt;editor;programming;programmer;development;developer;code;文本;文字;编辑器;编程;程序员;开发;开发者;代码;wenben;wenzi;bianjiqi;biancheng;chengxuyuan;kaifa;kaifazhe;daima;
+Keywords=text;txt;editor;programming;programmer;development;developer;code;
+MimeType=text/plain;inode/directory;
+Name[zh_CN]=Kate 编辑器
+Name=Kate
+StartupNotify=true
+StartupWMClass=kate
+Type=Application
+X-DocPath=kate/index.html
+X-KDE-HasTempFileOption=true

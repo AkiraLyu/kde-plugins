@@ -1,0 +1,16 @@
+# 从旧仓库保留的 Darkly 设置；明暗切换只改变配色，不改这些参数。
+[Common]
+OutlineCloseButton=true
+ShadowStrength=51
+
+# 菜单、工具栏、标签栏和 Dolphin 侧栏的不透明度为 60%。
+[Style]
+DolphinSidebarOpacity=60
+MenuBarOpacity=60
+MenuOpacity=60
+TabBarOpacity=60
+ToolBarOpacity=60
+
+[Windeco]
+BlurTransparentTitleBar=true
+DrawBackgroundGradient=true

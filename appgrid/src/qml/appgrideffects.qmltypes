@@ -1,0 +1,34 @@
+import QtQuick.tooling 1.2
+
+Module {
+    Component {
+        name: "BackgroundEffect"
+        prototype: "QObject"
+        exports: ["org.kde.plasma.appgrid.effects/BackgroundEffect 1.0"]
+        exportMetaObjectRevisions: [256]
+        Property {
+            name: "window"
+            type: "QWindow"
+            isPointer: true
+        }
+        Property { name: "enabled"; type: "bool" }
+        Property { name: "active"; type: "bool"; isReadonly: true }
+        Property {
+            name: "usingStandardProtocol"
+            type: "bool"
+            isReadonly: true
+        }
+        Property { name: "themeAllowsBlur"; type: "bool"; isReadonly: true }
+        Property {
+            name: "compositorSupportsBlur"
+            type: "bool"
+            isReadonly: true
+        }
+        Signal { name: "windowChanged" }
+        Signal { name: "enabledChanged" }
+        Signal { name: "activeChanged" }
+        Signal { name: "backendChanged" }
+        Signal { name: "themeAllowsBlurChanged" }
+        Signal { name: "compositorSupportsBlurChanged" }
+    }
+}

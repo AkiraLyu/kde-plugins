@@ -1,0 +1,40 @@
+# Better Blur DX 负责模糊，关闭 KDE 自带 Blur，避免两个效果同时工作。
+# Rounded Corners 显式启用，不再依赖包的默认开关。
+[Plugins]
+better_blur_dxEnabled=true
+blurEnabled=false
+kwin4_effect_shapecornersEnabled=true
+wechat-glass-live-v5Enabled=true
+
+# WeChat 插件只处理 XWayland 微信主窗口的两条栏；不强制模糊整个窗口。
+[Effect-wechat-glass-live]
+BackgroundOpacity=0.52
+Enabled=true
+
+# 模糊强度、饱和度和窗口匹配。
+[Effect-better-blur-dx]
+BlurStrength=2
+Saturation=250
+WindowClasses=/^(md[.]obsidian[.]Obsidian|chatgpt)$/
+
+# 圆角半径 16；最大化和平铺时也保留圆角。
+[Round-Corners]
+ActiveOutlineAlpha=0
+ActiveSecondOutlineAlpha=2
+AnimationDuration=0
+DisableRoundMaximize=false
+DisableRoundTile=false
+InactiveCornerRadius=16
+InactiveOutlineAlpha=0
+InactiveOutlineColor=255,255,255
+InactiveOutlineThickness=0
+InactiveSecondOutlineAlpha=0
+InactiveSecondOutlineThickness=0
+InactiveShadowSize=25
+Inclusions=code
+OutlineColor=255,255,255
+OutlineThickness=0
+SecondOutlineThickness=0
+ShadowSize=50
+Size=16
+Squircleness=0

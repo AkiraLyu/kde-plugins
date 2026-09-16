@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Kate 按会话保存插件开关。每次打开前启用透明边栏，不接管会话中的文档。
+set -euo pipefail
+shopt -s nullglob
+
+kate_data="${XDG_DATA_HOME:-$HOME/.local/share}/kate"
+mkdir -p -- "$kate_data"
+for session_file in "$kate_data/anonymous.katesession" "$kate_data"/sessions/*.katesession; do
+    kwriteconfig6 --file "$session_file" --group 'Kate Plugins' \
+        --key katetranslucentbarsplugin --type bool true
+done
+
+# 完整路径避免再次调用本包装脚本；所有命令行参数原样交给 Kate。
+exec /usr/bin/kate "$@"

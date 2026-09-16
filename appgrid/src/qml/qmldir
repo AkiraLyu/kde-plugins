@@ -1,0 +1,5 @@
+module org.kde.plasma.appgrid.effects
+plugin appgrideffectsplugin
+classname AppGridEffectsPlugin
+typeinfo appgrideffects.qmltypes
+depends QtQuick

@@ -1,0 +1,9 @@
+[Unit]
+Description=Synchronize the saved light/dark theme
+Requisite=graphical-session.target
+After=graphical-session.target plasma-kded6.service
+PartOf=personal-graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/darkly-theme --quiet apply

@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Description": "Makes only Kate's left tool selector and bottom bar translucent and blurred when Darkly is active",
+        "Description[zh_CN]": "仅在 Darkly 启用时使 Kate 左侧工具选择栏和底栏半透明并启用模糊",
+        "Name": "Darkly Translucent Kate Bars",
+        "Name[zh_CN]": "Darkly Kate 半透明边栏"
+    }
+}
