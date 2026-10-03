@@ -17,7 +17,7 @@ kwriteconfig6 --file "$kate_desktop" --group 'Desktop Entry' \
 mkdir -p "$HOME/.local/bin"
 ln -sfn /usr/bin/kate-translucent "$HOME/.local/bin/kate"
 
-for file in kwinrc darklyrc; do
+for file in kwinrc darklyrc kdeglobals; do
     group=
     while IFS= read -r line || [[ -n $line ]]; do
         case "$line" in

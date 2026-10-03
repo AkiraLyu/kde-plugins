@@ -1,0 +1,4 @@
+# 固定 KDE 文件选择器侧栏的图标大小；由应用和 portal 继承。
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=16
