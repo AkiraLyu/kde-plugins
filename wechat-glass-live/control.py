@@ -52,6 +52,13 @@ def main():
             raise RuntimeError("请先运行 kde-config，启用 Better Blur DX。")
         write(GROUP, "Enabled", "true")
         write("Plugins", EFFECT + "Enabled", "true")
+        # Better Blur DX 在运行中改 kwinrc 后不一定会重读强制模糊列表，
+        # 逐特效 reconfigure 也不足以让 Wayland 窗口拿到模糊；重新加载效果
+        # 才能保证列表生效。Wayland 微信窗口的模糊依赖该列表。
+        if effects("unloadEffect", "better_blur_dx") == "true":
+            effects("loadEffect", "better_blur_dx")
+            if effects("isEffectLoaded", "better_blur_dx") != "true":
+                raise RuntimeError("Better Blur DX 未能重新加载，请检查用户会话日志。")
     elif args.action == "disable":
         write(GROUP, "Enabled", "false")
         write("Plugins", EFFECT + "Enabled", "false")

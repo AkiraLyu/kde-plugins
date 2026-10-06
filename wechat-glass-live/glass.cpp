@@ -9,13 +9,14 @@
 #include <scene/borderradius.h>
 #include <opengl/glutils.h>
 #include <KConfigGroup>
+#include <QHash>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
-#include <QSet>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <utility>
 
 namespace KWin {
 
@@ -23,6 +24,14 @@ class WeChatGlassLive final : public OffscreenEffect
 {
     Q_OBJECT
 public:
+    // X11 clients carry an explicit blur region on their own window. A Wayland
+    // client can only request a blur region itself, so the backdrop blur of a
+    // Wayland window comes from Better Blur DX's forced blur for its class.
+    enum class Backend {
+        X11,
+        Wayland,
+    };
+
     WeChatGlassLive()
     {
         effects->makeOpenGLContextCurrent();
@@ -76,9 +85,12 @@ public:
     void prePaintWindow(RenderView *view, EffectWindow *w, WindowPrePaintData &data) override
     {
         if (matches(w)) {
+            const Backend backend = w->isX11Client() ? Backend::X11 : Backend::Wayland;
             // A closing X11Window has already released its X client handle.
             // Better Blur DX retains the last region until windowDeleted.
-            if (!w->isDeleted()) {
+            // A Wayland window has no X window, so its blur region is never
+            // written and Better Blur DX force blurs that window instead.
+            if (!w->isDeleted() && backend == Backend::X11) {
                 updateBlur(w);
             }
             if (!m_windows.contains(w)) {
@@ -87,7 +99,7 @@ public:
                 // attribute instead uses a static CrossFadeEffect snapshot.
                 redirect(w);
                 setShader(w, m_shader.get());
-                m_windows.insert(w);
+                m_windows.insert(w, backend);
             }
             // Let the compositor paint the backdrop under the two transparent
             // bars, without changing input, visibility refs, or window opacity.
@@ -116,14 +128,22 @@ public:
 
     QString debug(const QString &) const override
     {
+        int x11 = 0;
+        int wayland = 0;
+        for (auto backend : std::as_const(m_windows)) {
+            (backend == Backend::X11 ? x11 : wayland)++;
+        }
         return QString::fromUtf8(QJsonDocument(QJsonObject{
             {"renderer", "OffscreenEffect (live window damage)"},
-            {"version", "0.5.0"},
+            {"version", "0.6.1"},
             {"enabled", m_enabled},
             {"shader_valid", bool(m_shader)},
             {"redirected_windows", int(m_windows.size())},
+            {"x11_windows", x11},
+            {"wayland_windows", wayland},
             {"windows_with_blur_region", int(m_blur.size())},
-            {"blur_scope", "rounded title and navigation bars; no popup matching"},
+            {"blur_scope", "rounded title and navigation bars; X11 windows get an explicit "
+                           "region, Wayland windows are blurred by Better Blur DX"},
             {"painted_frames", double(m_paintedFrames)},
             {"active", isActive()}
         }).toJson(QJsonDocument::Compact));
@@ -140,8 +160,11 @@ private:
         const auto classes = w->windowClass().split(QLatin1Char(' '));
         static const QRegularExpression caption(QStringLiteral("^(微信|WeChat|Weixin)(?:\\s*\\(\\d+\\))?$"),
                                                  QRegularExpression::CaseInsensitiveOption);
+        // Both backends are supported. An X11 window gets an explicit blur
+        // region, a Wayland window is blurred through Better Blur DX's forced
+        // blur for its window class.
         return (classes.contains(QStringLiteral("wechat")) || classes.contains(QStringLiteral("com.tencent.wechat"), Qt::CaseInsensitive))
-            && w->isX11Client() && w->isNormalWindow() && !w->isDialog() && !w->isPopupWindow()
+            && w->isNormalWindow() && !w->isDialog() && !w->isPopupWindow()
             && !w->window()->isTransient()
             && w->isVisible() && !w->isMinimized()
             && w->isOnCurrentDesktop() && w->isOnCurrentActivity()
@@ -159,7 +182,7 @@ private:
 
     void clearWindows()
     {
-        const auto windows = m_windows;
+        const auto windows = m_windows.keys();
         for (auto *w : windows) {
             detach(w);
         }
@@ -187,6 +210,8 @@ private:
         QVector4D radii;
     };
 
+    // Only called for X11 clients: _KDE_NET_WM_BLUR_BEHIND_REGION is an X11
+    // property and a Wayland window has no X window to write it to.
     void updateBlur(EffectWindow *w)
     {
         auto *client = qobject_cast<X11Window *>(w->window());
@@ -293,7 +318,10 @@ private:
     double m_cornerRadius = 16.0;
     QVector2D m_barSize;
     quint64 m_paintedFrames = 0;
-    QSet<EffectWindow *> m_windows;
+    // Windows carrying the shader, with the backend they were matched on. The
+    // backend is recorded here because a deleted EffectWindow no longer exposes
+    // its underlying window.
+    QHash<EffectWindow *, Backend> m_windows;
     QHash<EffectWindow *, BlurState> m_blur;
     std::unique_ptr<GLShader> m_shader;
 };

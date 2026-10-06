@@ -53,6 +53,10 @@ public:
 };
 int main(int argc,char **argv) {
     QApplication app(argc,argv); app.setApplicationName("wechat");
+    // Wayland identifies a window by the desktop file name. Without it Qt falls
+    // back to the executable name and the effect's window class match never
+    // fires, so the synthetic client must announce WeChat's app id.
+    app.setDesktopFileName(QStringLiteral("wechat"));
     app.setQuitOnLastWindowClosed(false);
     Backdrop b; b.show(); b.move(0,0);
     Main w; w.show(); w.move(160,130);

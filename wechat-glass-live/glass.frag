@@ -59,9 +59,16 @@ void main() {
                 }
             }
         }
-        float coverage = bestDistance > 0.00002
+        // Differences of one or two 8-bit steps are dithering and fractional
+        // scaling noise, not foreground. Projecting them onto a neighbour would
+        // report full foreground coverage and keep the whole bar opaque, so a
+        // real contrast is required before a pixel counts as foreground.
+        const float foregroundFloor = 0.0005;
+        float ownDistance = dot(color - bg, color - bg);
+        float coverage = bestDistance > foregroundFloor
             ? clamp(dot(color - bg, foregroundDelta) / bestDistance, 0.0, 1.0) : 0.0;
-        float residual = length(color - bg - foregroundDelta * coverage);
+        float residual = ownDistance <= foregroundFloor
+            ? 0.0 : length(color - bg - foregroundDelta * coverage);
         float compatible = 1.0 - smoothstep(0.005, uTolerance, residual);
         float removedAlpha = (1.0 - uOpacity) * (1.0 - coverage) * compatible * tex.a;
         tex.rgb = max(vec3(0.0), tex.rgb - bg * removedAlpha);

@@ -6,16 +6,20 @@ blurEnabled=false
 kwin4_effect_shapecornersEnabled=true
 wechat-glass-live-v5Enabled=true
 
-# WeChat 插件只处理 XWayland 微信主窗口的两条栏；不强制模糊整个窗口。
+# 微信两条栏的透明由插件负责；XWayland 窗口写入模糊区域，Wayland 窗口改用
+# Better Blur DX 的强制模糊。
 [Effect-wechat-glass-live]
 BackgroundOpacity=0.52
 Enabled=true
 
-# 模糊强度、饱和度和窗口匹配。
+# 模糊强度、饱和度和窗口匹配。wechat 同时覆盖 Wayland 原生窗口和 XWayland 窗口：
+# 强制模糊对已经自带模糊区域的窗口不生效，因此不会与插件的模糊区域冲突。
+# CornerRadius 与 Shape Corners 的 16 一致，避免圆角外露出方形模糊。
 [Effect-better-blur-dx]
 BlurStrength=2
+CornerRadius=16
 Saturation=250
-WindowClasses=/^(md[.]obsidian[.]Obsidian|chatgpt)$/
+WindowClasses=/^(md[.]obsidian[.]Obsidian|chatgpt|wechat)$/
 
 # 圆角半径 16；最大化和平铺时也保留圆角。
 [Round-Corners]

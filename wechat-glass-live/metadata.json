@@ -3,7 +3,7 @@
         "Name": "WeChat Glass (Live)",
         "Name[zh_CN]": "微信局部透明（实时）",
         "Description": "Live transparency for WeChat's title and navigation bars",
-        "Version": "0.5.0",
+        "Version": "0.6.1",
         "License": "GPL-2.0-or-later",
         "Category": "Appearance",
         "EnabledByDefault": false

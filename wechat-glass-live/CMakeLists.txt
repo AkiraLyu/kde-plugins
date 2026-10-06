@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(wechat-glass-live VERSION 0.5.0 LANGUAGES CXX)
+project(wechat-glass-live VERSION 0.6.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,6 +35,8 @@ if(WECHAT_GLASS_BUILD_TESTS)
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-corners.py)
     add_test(NAME transparency-during-close
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-closing.py)
+    add_test(NAME wayland-transparency
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-wayland.py)
     foreach(scale IN ITEMS 1.0 1.25)
         add_test(NAME edges-at-${scale}
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-edges.py)
@@ -43,7 +45,7 @@ if(WECHAT_GLASS_BUILD_TESTS)
             TIMEOUT 90
         )
     endforeach()
-    set_tests_properties(corners-and-live-updates transparency-during-close PROPERTIES
+    set_tests_properties(corners-and-live-updates transparency-during-close wayland-transparency PROPERTIES
         ENVIRONMENT "WECHAT_GLASS_BUILD_DIR=${CMAKE_BINARY_DIR}"
         TIMEOUT 90
     )
