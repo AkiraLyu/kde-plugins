@@ -57,7 +57,12 @@ if [[ $(kreadconfig6 --file plasmarc --group Theme --key name) != darkly-translu
 fi
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key library --notify org.kde.darkly
 kwriteconfig6 --file kwinrc --group org.kde.kdecoration2 --key theme --notify 'Darkly 微风'
-qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+# Niri 等会话没有 KWin，仍需继续同步 GTK 偏好并保存模式。
+kwin_running=$(qdbus6 org.freedesktop.DBus /org/freedesktop/DBus \
+    org.freedesktop.DBus.NameHasOwner org.kde.KWin)
+if [[ $kwin_running == true ]]; then
+    qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+fi
 
 # 保持现有 GTK 主题、图标和字体，仅同步新旧 GTK 应用读取的明暗偏好。
 gsettings set org.gnome.desktop.interface color-scheme "prefer-$mode"

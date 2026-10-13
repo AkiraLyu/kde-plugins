@@ -19,7 +19,7 @@ Enabled=true
 BlurStrength=2
 CornerRadius=16
 Saturation=250
-WindowClasses=/^(md[.]obsidian[.]Obsidian|chatgpt|wechat)$/
+WindowClasses=/^(md[.]obsidian[.]Obsidian|wechat)$/
 
 # 圆角半径 16；最大化和平铺时也保留圆角。
 [Round-Corners]
