@@ -1,6 +1,6 @@
 # KDE plugins and configuration
 
-Personal Plasma 6 plugins, translucent themes, application patches and KDE settings.
+Personal Plasma 6 plugins, translucent themes and KDE settings.
 
 | Directory | Component |
 | --- | --- |
@@ -9,7 +9,6 @@ Personal Plasma 6 plugins, translucent themes, application patches and KDE setti
 | `kate-translucent-bars` | Kate translucent bars and session launcher |
 | `wechat-glass-live` | KWin effect for WeChat bars on XWayland and Wayland, with control command |
 | `darkly-translucent` | Static Darkly 0.5.41 theme with backgrounds at 60% opacity |
-| `chatgpt-translucent-bars` | ChatGPT window transparency patch and pacman hook |
 | `kde-config` | Darkly/KWin settings, theme switcher and configuration command |
 
 Arch packages are maintained in [AkiraLyu/pkgbuilds](https://github.com/AkiraLyu/pkgbuilds).
@@ -17,15 +16,13 @@ With that repository configured in Paru:
 
 ```sh
 paru --sudo run0 -Sy --pkgbuilds
-paru --sudo run0 -S kde-config chatgpt-translucent-bars
+paru --sudo run0 -S kde-config
 kde-config
 ```
 
 `kde-config` installs App Grid, Adjustable Task Manager, Kate/WeChat plugins and the Plasma theme as dependencies.
 `darkly-theme light|dark|toggle|apply|status` controls the appearance.
 `wechat-glass-control status|enable|disable|opacity` controls the WeChat effect.
-`chatgpt-desktop` comes from AUR. A separate `chatgpt-translucent-bars` package
-reapplies the ASAR patch through a pacman post-transaction hook.
 Restart applications after installing new native modules; log in again after a KWin ABI update.
 
 Settings are installed under `/usr/share/kde-config` and applied to the current user by
