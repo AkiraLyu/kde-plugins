@@ -17,12 +17,12 @@ out vec4 fragColor;
 
 vec4 sampleAt(vec2 p) {
     vec2 uv = (p - uExpandedOffset) / uExpandedSize;
-    return texture(sampler, vec2(uv.x, 1.0 - uv.y));
+    return texture(sampler, uv);
 }
 
 void main() {
     vec4 tex = texture(sampler, texcoord0);
-    vec2 p = vec2(texcoord0.x, 1.0 - texcoord0.y) * uExpandedSize + uExpandedOffset;
+    vec2 p = texcoord0 * uExpandedSize + uExpandedOffset;
     // Include the outermost pixels: leaving an opaque rim around translucent
     // bars makes a pale line that is especially visible while moving.
     bool inside = all(greaterThanEqual(p, vec2(0.0)))
