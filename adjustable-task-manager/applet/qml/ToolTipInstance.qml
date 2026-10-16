@@ -19,7 +19,6 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
-import org.kde.kwindowsystem
 
 ColumnLayout {
     id: root
@@ -256,8 +255,7 @@ ColumnLayout {
             id: thumbnailLoader
             active: !toolTipDelegate.isLauncher
                 && !albumArtImage.visible
-                && (Number.isInteger(thumbnailSourceItem.winId) || pipeWireLoader.item
-                && !(pipeWireLoader.item as PipeWireThumbnail).hasThumbnail)
+                && pipeWireLoader.item && !(pipeWireLoader.item as PipeWireThumbnail).hasThumbnail
                 && root.index !== -1 // Avoid loading when the instance is going to be destroyed
             asynchronous: true
             visible: active
@@ -266,17 +264,9 @@ ColumnLayout {
             // shadow can cover up the highlight
             anchors.margins: Kirigami.Units.smallSpacing * 2
 
-            sourceComponent: root.isMinimized || pipeWireLoader.active ? iconItem : x11Thumbnail
+            sourceComponent: iconItem
 
-            Component {
-                id: x11Thumbnail
-
-                PlasmaCore.WindowThumbnail {
-                    winId: thumbnailSourceItem.winId
-                }
-            }
-
-            // when minimized, we don't have a preview on X11, so show the icon
+            // Show the application icon while its PipeWire thumbnail is unavailable.
             Component {
                 id: iconItem
 
@@ -318,7 +308,6 @@ ColumnLayout {
             active: Plasmoid.configuration.showToolTips
                 && !toolTipDelegate.isLauncher
                 && !albumArtImage.visible
-                && KWindowSystem.isPlatformWayland
                 && toolTipDelegate.isReadyForPainting
                 && root.index !== -1
             asynchronous: true

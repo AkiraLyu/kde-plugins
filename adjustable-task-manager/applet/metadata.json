@@ -67,7 +67,7 @@
         "Description[zh_CN]": "支持固定图标间距、自定义任务宽度和原位启动的图标和文本任务管理器",
         "Version": "0.1.0"
     },
-    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-API-Minimum-Version": "6.8",
     "X-Plasma-Provides": [
         "org.kde.plasma.multitasking"
     ]

@@ -2,28 +2,38 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QCursor>
+#include <QDir>
 #include <QFile>
+#include <QList>
 #include <QMenu>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
 
 #include <KConfigPropertyMap>
 #include <KLocalizedString>
+#include <KWayland/Client/connection_thread.h>
+#include <KWayland/Client/fakeinput.h>
+#include <KWayland/Client/registry.h>
 #include <Plasma/Applet>
 #include <Plasma/Containment>
 #include <Plasma/Corona>
 #include <PlasmaQuick/AppletQuickItem>
+#include <PlasmaQuick/Dialog>
 #include <taskmanager/abstracttasksmodel.h>
 #include <taskmanager/tasksmodel.h>
+
+#include <linux/input-event-codes.h>
 
 class TestCorona : public Plasma::Corona
 {
 public:
-    QRect screenGeometry(int) const override
+    QRect screenGeometry(uint) const override
     {
         return QRect(0, 0, 1600, 900);
     }
@@ -34,8 +44,34 @@ class SmokeTest : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    void initTestCase()
+    {
+        QVERIFY2(qEnvironmentVariable("TASK_MANAGER_TEST_SESSION") == QLatin1String("1"), "Run this test through CTest in its isolated Wayland session.");
+    }
+
     void appletLoadsAndAppliesSettings()
     {
+        KWayland::Client::Registry registry;
+        registry.create(KWayland::Client::ConnectionThread::fromApplication());
+        registry.setup();
+        QTRY_VERIFY(registry.hasInterface(KWayland::Client::Registry::Interface::FakeInput));
+        const auto interface = registry.interface(KWayland::Client::Registry::Interface::FakeInput);
+        QScopedPointer<KWayland::Client::FakeInput> input(registry.createFakeInput(interface.name, interface.version));
+        QVERIFY(input->isValid());
+        input->authenticate(QStringLiteral("Task Manager Smoke Test"), QStringLiteral("Test input in an isolated compositor"));
+        const auto movePointer = [&input](const QPoint &position) {
+            input->requestPointerMoveAbsolute(position);
+            return QTest::qWaitFor([&position] { return QCursor::pos() == position; });
+        };
+        const auto sendKeys = [&input](const QList<quint32> &keys) {
+            for (auto key : keys) {
+                input->requestKeyboardKeyPress(key);
+            }
+            for (auto key = keys.crbegin(); key != keys.crend(); ++key) {
+                input->requestKeyboardKeyRelease(*key);
+            }
+        };
+
         TestCorona corona;
         auto *containment = corona.createContainment(QStringLiteral("null"));
         QVERIFY(containment);
@@ -46,9 +82,11 @@ private Q_SLOTS:
         auto *config = applet->configuration();
         QTemporaryDir launcherFiles;
         const QString launchMarker = launcherFiles.filePath(QStringLiteral("launcher-activated"));
+        const QDir applications(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/applications"));
+        QVERIFY(applications.mkpath(QStringLiteral(".")));
         QStringList launchers;
         for (int i = 0; i < 3; ++i) {
-            const QString path = launcherFiles.filePath(QStringLiteral("launcher-%1.desktop").arg(i));
+            const QString path = applications.filePath(QStringLiteral("org.kde.adjustabletaskmanager.smoke.launcher-%1.desktop").arg(i));
             QFile desktop(path);
             QVERIFY(desktop.open(QIODevice::WriteOnly));
             desktop.write(QStringLiteral("[Desktop Entry]\nType=Application\nName=Smoke launcher\nExec=/usr/bin/touch %1\nIcon=applications-system\n")
@@ -60,7 +98,7 @@ private Q_SLOTS:
         QVERIFY(config->setProperty("launchers", launchers));
         QVERIFY(config->setProperty("showOnlyCurrentDesktop", false));
         QVERIFY(config->setProperty("showOnlyCurrentActivity", false));
-        QGuiApplication::setDesktopFileName(launcherFiles.filePath(QStringLiteral("launcher-1.desktop")));
+        QGuiApplication::setDesktopFileName(QStringLiteral("org.kde.adjustabletaskmanager.smoke.launcher-1"));
 
         auto *item = PlasmaQuick::AppletQuickItem::itemForApplet(applet);
         QVERIFY(item);
@@ -68,13 +106,19 @@ private Q_SLOTS:
         // Plasma may also load a stock task manager in the same process.
         auto *stockApplet = containment->createApplet(QStringLiteral("org.kde.plasma.icontasks"));
         QVERIFY(stockApplet);
-        QVERIFY(PlasmaQuick::AppletQuickItem::itemForApplet(stockApplet));
-        QQuickWindow window;
-        window.setFlags(Qt::Tool | Qt::FramelessWindowHint);
+        QVERIFY(stockApplet->configuration()->setProperty("launchers", launchers));
+        QVERIFY(stockApplet->configuration()->setProperty("showOnlyCurrentDesktop", false));
+        QVERIFY(stockApplet->configuration()->setProperty("showOnlyCurrentActivity", false));
+        auto *stockItem = PlasmaQuick::AppletQuickItem::itemForApplet(stockApplet);
+        QVERIFY(stockItem);
+        PlasmaQuick::Dialog window;
+        window.setType(PlasmaQuick::Dialog::Dock);
+        window.setBackgroundHints(PlasmaQuick::Dialog::NoBackground);
         window.resize(1600, 48);
         item->setParentItem(window.contentItem());
         item->setSize(QSizeF(1600, 48));
         window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
 
         auto *model = item->property("tasksModel").value<TaskManager::TasksModel *>();
         QVERIFY(model);
@@ -93,15 +137,23 @@ private Q_SLOTS:
         QVERIFY(config->setProperty("launcherSpacing", 0));
         QTRY_COMPARE(launcher->width(), 48.0);
 
-        QTest::mouseClick(&window, Qt::RightButton, Qt::NoModifier, launcher->mapToScene(QPointF(24, 24)).toPoint());
+        QVERIFY(movePointer(window.mapToGlobal(launcher->mapToScene(QPointF(24, 24)).toPoint())));
+        QTRY_VERIFY(launcher->property("containsMouse").toBool());
+        input->requestPointerButtonPress(Qt::RightButton);
         QTRY_VERIFY(launcher->property("contextMenu").value<QObject *>());
         auto *menu = launcher->property("contextMenu").value<QObject *>();
         QCOMPARE(menu->property("backend").value<QObject *>(), item->property("backend").value<QObject *>());
         QTRY_VERIFY(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
         auto *popup = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+        QVERIFY(QTest::qWaitForWindowExposed(popup->windowHandle()));
+        input->requestPointerButtonRelease(Qt::RightButton);
         QVERIFY(!popup->actions().isEmpty());
-        QTest::keyClick(popup, Qt::Key_Escape);
+        sendKeys({KEY_ESC});
         QTRY_VERIFY(!launcher->property("contextMenu").value<QObject *>());
+        QVERIFY(!QFile::exists(launchMarker));
+        // Keep a single eligible task manager for the shortcut checks below.
+        // Removing the stock instance must leave the shared shortcuts working.
+        delete stockApplet;
 
         // A matching window must replace the middle launcher and restore it on close.
         const auto launcherRole = TaskManager::AbstractTasksModel::LauncherUrlWithoutIcon;
@@ -148,6 +200,19 @@ private Q_SLOTS:
         QVERIFY(config->setProperty("shrinkTasksToTitle", true));
         QTRY_VERIFY(secondTask->width() < windowTask->width());
 
+        // Plasma 6.8 also dispatches task cycling and reordering through the backend.
+        QTRY_VERIFY(model->index(2, 0).data(TaskManager::AbstractTasksModel::IsActive).toBool());
+        sendKeys({KEY_LEFTMETA, KEY_LEFTCTRL, KEY_PAGEUP});
+        QTRY_VERIFY(model->index(1, 0).data(TaskManager::AbstractTasksModel::IsActive).toBool());
+        sendKeys({KEY_LEFTMETA, KEY_LEFTCTRL, KEY_PAGEDOWN});
+        QTRY_VERIFY(model->index(2, 0).data(TaskManager::AbstractTasksModel::IsActive).toBool());
+        sendKeys({KEY_LEFTMETA, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_PAGEUP});
+        QTRY_COMPARE(model->index(1, 0).data(Qt::DisplayRole).toString(), QStringLiteral("Short"));
+        sendKeys({KEY_LEFTMETA, KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_PAGEDOWN});
+        QTRY_COMPARE(model->index(1, 0).data(Qt::DisplayRole).toString(), longTitle);
+        QCOMPARE(model->index(2, 0).data(Qt::DisplayRole).toString(), QStringLiteral("Short"));
+        QCOMPARE(model->launcherList(), launchers);
+
         if (const auto path = qEnvironmentVariable("TASK_MANAGER_SCREENSHOT"); !path.isEmpty()) {
             QTest::qWait(200);
             QVERIFY(window.grabWindow().save(path));
@@ -157,7 +222,9 @@ private Q_SLOTS:
         secondWindow.setWindowState(Qt::WindowMinimized);
         QTRY_VERIFY(model->index(1, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
         QTRY_VERIFY(model->index(2, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
-        QVERIFY(QMetaObject::invokeMethod(item, "activateTaskAtIndex", Q_ARG(QVariant, 1)));
+        QTRY_VERIFY(!model->activeTask().isValid());
+        QVERIFY(!QFile::exists(launchMarker));
+        sendKeys({KEY_LEFTMETA, KEY_2});
         QTRY_VERIFY(!model->index(2, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
         QVERIFY(model->index(1, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
         secondWindow.close();
@@ -166,18 +233,23 @@ private Q_SLOTS:
         // Meta+1 must restore the first window even though a pinned icon precedes it.
         launchedWindow.setWindowState(Qt::WindowMinimized);
         QTRY_VERIFY(model->index(1, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
-        QVERIFY(QMetaObject::invokeMethod(item, "activateTaskAtIndex", Q_ARG(QVariant, 0)));
+        QTRY_VERIFY(!model->activeTask().isValid());
+        sendKeys({KEY_LEFTMETA, KEY_1});
         QTRY_VERIFY(!model->index(1, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
         QVERIFY(!QFile::exists(launchMarker));
 
-        QVERIFY(QMetaObject::invokeMethod(item, "activateTaskAtIndex", Q_ARG(QVariant, 1)));
+        sendKeys({KEY_LEFTMETA, KEY_2});
         QTest::qWait(100);
         QVERIFY(!model->index(1, 0).data(TaskManager::AbstractTasksModel::IsMinimized).toBool());
 
         // Exercise a window action as well as opening the launcher's menu above.
-        QTest::mouseClick(&window, Qt::RightButton, Qt::NoModifier, windowTask->mapToScene(QPointF(24, 24)).toPoint());
+        QVERIFY(movePointer(window.mapToGlobal(windowTask->mapToScene(QPointF(24, 24)).toPoint())));
+        QTRY_VERIFY(windowTask->property("containsMouse").toBool());
+        input->requestPointerButtonPress(Qt::RightButton);
         QTRY_VERIFY(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
         popup = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+        QVERIFY(QTest::qWaitForWindowExposed(popup->windowHandle()));
+        input->requestPointerButtonRelease(Qt::RightButton);
         QAction *closeAction = nullptr;
         for (auto *action : popup->actions()) {
             if (action->icon().name() == QLatin1String("window-close")) {
@@ -190,14 +262,17 @@ private Q_SLOTS:
         if (const auto path = qEnvironmentVariable("TASK_MANAGER_SCREENSHOT"); !path.isEmpty()) {
             QVERIFY(popup->grab().save(path + QStringLiteral(".menu.png")));
         }
-        QTest::mouseClick(popup, Qt::LeftButton, Qt::NoModifier, popup->actionGeometry(closeAction).center());
+        // Keyboard navigation does not depend on the compositor's popup placement.
+        sendKeys({KEY_END});
+        QTRY_COMPARE(popup->activeAction(), closeAction);
+        sendKeys({KEY_ENTER});
         QTRY_VERIFY(model->index(1, 0).data(TaskManager::AbstractTasksModel::IsLauncher).toBool());
         QCOMPARE(model->index(1, 0).data(launcherRole), middleUrl);
         QCOMPARE(model->launcherList(), launchers);
 
         // With only launchers left, neither a valid number nor an out-of-range one may launch an app.
-        QVERIFY(QMetaObject::invokeMethod(item, "activateTaskAtIndex", Q_ARG(QVariant, 0)));
-        QVERIFY(QMetaObject::invokeMethod(item, "activateTaskAtIndex", Q_ARG(QVariant, 8)));
+        sendKeys({KEY_LEFTMETA, KEY_1});
+        sendKeys({KEY_LEFTMETA, KEY_9});
         QTest::qWait(500);
         QVERIFY(!QFile::exists(launchMarker));
 
@@ -267,8 +342,6 @@ private Q_SLOTS:
 
 int main(int argc, char **argv)
 {
-    QTemporaryDir config;
-    qputenv("XDG_CONFIG_HOME", config.path().toUtf8());
     QApplication app(argc, argv);
     KLocalizedString::setApplicationDomain("plasma_applet_org.kde.plasma.adjustabletaskmanager");
     SmokeTest test;

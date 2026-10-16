@@ -10,6 +10,9 @@ msgstr ""
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgid "The Plasma Task Manager backend could not be loaded: %1"
+msgstr "无法加载 Plasma 任务管理器后端：%1"
+
 msgctxt "@item:inlistbox task width"
 msgid "Custom"
 msgstr "自定义"

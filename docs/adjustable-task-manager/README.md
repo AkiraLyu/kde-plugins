@@ -1,6 +1,7 @@
 # 可调节图标和文本任务管理器
 
-基于 KDE Plasma **6.7.5** 官方 Icons-and-Text Task Manager 的小幅 fork。
+基于 KDE Plasma 官方 Icons-and-Text Task Manager，适用于 **Plasma 6.8**。
+界面源自 6.7.5，原生后端复用系统安装的官方任务管理器。
 插件 ID：`org.kde.plasma.adjustabletaskmanager`。
 
 ## 改动
@@ -25,7 +26,8 @@
 
 ## 构建和安装
 
-需要 Plasma 6.7、Qt 6.10+、KDE Frameworks 6.26+、CMake、Ninja、C++20 编译器。
+需要 Plasma Desktop 6.8+（包含官方任务管理器）、Qt 6.11+、KDE Frameworks 6.30+、
+CMake、Ninja、C++20 编译器。运行环境为 Plasma Wayland 会话。
 在配置了 AkiraLyu/pkgbuilds 的 Arch Linux 上执行：
 
 ```bash
@@ -43,27 +45,31 @@ systemctl --user restart plasma-plasmashell.service
 然后在面板的“添加小部件”中搜索 **可调节图标和文本任务管理器**。
 可以先添加、调整配置和固定应用，确认后移除旧的两个任务管理器。
 
-**Meta+数字键**由 Plasma 在主屏各面板中查找任务管理器。
-为了避免多个管理器竞争，请让主屏只保留这一个任务管理器；其他面板／底部 Dock 中的
-图标任务管理器也会参与选择。此 fork 保留官方快捷键入口，不额外抢占全局快捷键。
+**Meta+数字键**与官方任务管理器共用快捷键后端。Plasma 6.8 优先选择包含活动任务、
+且不按屏幕过滤的任务管理器；没有活动任务时，优先选择不按屏幕过滤的实例。
+多个管理器同时满足条件时，选择结果还取决于后端初始化顺序。要始终使用本插件的编号规则，
+建议只保留这一个任务管理器，其他面板和底部 Dock 中的任务管理器也会参与选择。
+Plasma 6.8 的前后任务切换、任务位置移动快捷键同样使用这个后端。
 
 ## 验证和独立预览
 
 ```bash
-cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
-cmake --build build --parallel 4
-ctest --test-dir build --output-on-failure
+cmake -S adjustable-task-manager -B adjustable-task-manager/build -G Ninja -DBUILD_TESTING=ON
+cmake --build adjustable-task-manager/build --parallel 4
+ctest --test-dir adjustable-task-manager/build --output-on-failure
 
-QT_PLUGIN_PATH="$PWD/build/bin${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}" \
+QT_PLUGIN_PATH="$PWD/adjustable-task-manager/build/bin${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}" \
     plasmawindowed org.kde.plasma.adjustabletaskmanager
 ```
 
-冒烟测试需要 X11／XWayland 的 `DISPLAY`，使用临时配置加载真实插件，检查配置页、
-与官方任务管理器同时加载时的右键菜单、启动器间距、自适应宽度开关、数字快捷键跳过启动器，
-以及中间的固定图标在测试窗口打开／关闭时保持原位。
-测试会短暂显示自己的窗口，不修改面板，不启动或关闭用户的应用。
+以上命令在仓库根目录执行。冒烟测试还需要 Python 3、`dbus-run-session`、`kwin_wayland`
+和 KWayland 开发库。测试自动启动隔离的 D-Bus 和无界面的 KWin Wayland 会话，无需 `DISPLAY`。
+测试加载真实插件，通过鼠标和键盘事件检查配置页、与官方任务管理器同时加载时的右键菜单、
+启动器间距、自适应宽度开关、Meta+数字键跳过启动器、任务切换和重排快捷键，
+以及固定图标在测试窗口打开／关闭时保持原位。
+测试使用临时配置和自己的窗口，不修改当前桌面。
 
-当前基于 Plasma 6.7.5；升级 Plasma／Qt 后建议重新构建。此插件包含原生代码，
+升级 Plasma／Qt 后建议重新构建，并运行冒烟测试验证官方后端接口。此插件包含原生代码，
 不能作为纯 QML `.plasmoid` 包用 `kpackagetool6` 安装。
 
 ## 卸载

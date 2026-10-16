@@ -16,6 +16,7 @@ import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 import plasma.applet.org.kde.plasma.adjustabletaskmanager as TaskManagerApplet
+import plasma.applet.org.kde.plasma.taskmanager as TaskManagerBackend
 import org.kde.plasma.plasmoid
 
 import org.kde.taskmanager as TaskManager
@@ -259,7 +260,7 @@ PlasmaCore.ToolTipArea {
 
     onSmartLauncherEnabledChanged: {
         if (smartLauncherEnabled && !smartLauncherItem) {
-            const component = Qt.createComponent("plasma.applet.org.kde.plasma.adjustabletaskmanager", "SmartLauncherItem");
+            const component = Qt.createComponent("plasma.applet.org.kde.plasma.taskmanager", "SmartLauncherItem");
             const smartLauncher = component.createObject(task);
             component.destroy();
 
@@ -451,15 +452,15 @@ PlasmaCore.ToolTipArea {
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
         onTapped: (eventPoint, button) => {
             if (button === Qt.MiddleButton) {
-                if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
+                if (Plasmoid.configuration.middleClickAction === TaskManagerBackend.Backend.NewInstance) {
                     tasksModel.requestNewInstance(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerBackend.Backend.Close) {
                     tasksModel.requestClose(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerBackend.Backend.ToggleMinimized) {
                     tasksModel.requestToggleMinimized(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerBackend.Backend.ToggleGrouping) {
                     tasksModel.requestToggleGrouping(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerBackend.Backend.BringToCurrentDesktop) {
                     TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
                         tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
                     }, modelIndex(), tasksModel);

@@ -4,4 +4,4 @@ App Grid was originally based on `3e19d023ce24dc604175091a3ece425d9e04a56e`.
 The Plasma theme derives from Bali10050/Darkly 0.5.39; its original author metadata is retained.
 
 Adjustable Task Manager was imported from the complete, uncommitted project at
-`Documents/ChatGPT/task-manager`. Its upstream KDE provenance is in `adjustable-task-manager/UPSTREAM.md`.
+`Documents/ChatGPT/task-manager`. Its upstream KDE provenance is in `docs/adjustable-task-manager/UPSTREAM.md`.

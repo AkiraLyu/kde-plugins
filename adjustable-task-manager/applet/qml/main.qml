@@ -19,6 +19,7 @@ import org.kde.plasma.workspace.trianglemousefilter
 
 import org.kde.taskmanager as TaskManager
 import plasma.applet.org.kde.plasma.adjustabletaskmanager as TaskManagerApplet
+import plasma.applet.org.kde.plasma.taskmanager as TaskManagerBackend
 import org.kde.plasma.workspace.dbus as DBus
 
 PlasmoidItem {
@@ -230,12 +231,22 @@ PlasmoidItem {
         }
     }
 
-    readonly property TaskManagerApplet.Backend backend: TaskManagerApplet.Backend {
+    readonly property TaskManagerBackend.Backend backend: TaskManagerBackend.Backend {
         id: backend
+
+        screen: Plasmoid.containment.screen
+        hasActiveTask: tasksModel.count > 0 && tasksModel.activeTask.valid
+        showsOnlyCurrentScreen: Plasmoid.configuration.showOnlyCurrentScreen
 
         onAddLauncher: url => {
             tasks.addLauncher(url);
         }
+
+        onActivateTaskAtIndexRequested: index => tasks.activateTaskAtIndex(index)
+        onActivatePreviousTaskRequested: tasks.activateAdjacentTask(-1)
+        onActivateNextTaskRequested: tasks.activateAdjacentTask(1)
+        onMoveActiveTaskBackwardRequested: tasks.moveActiveTask(-1)
+        onMoveActiveTaskForwardRequested: tasks.moveActiveTask(1)
     }
 
     DBus.DBusServiceWatcher {
@@ -525,10 +536,9 @@ PlasmoidItem {
         }
     }
 
-    // This is called by plasmashell in response to a Meta+number shortcut.
-    // TODO: Change type to int
-    function activateTaskAtIndex(index: var): void {
-        if (!Number.isInteger(index) || index < 0) {
+    // The shared backend dispatches Meta+number shortcuts to this task manager.
+    function activateTaskAtIndex(index: int): void {
+        if (index < 0) {
             return;
         }
 
@@ -543,6 +553,43 @@ PlasmoidItem {
                 return;
             }
             ++windowIndex;
+        }
+    }
+
+    function activateAdjacentTask(direction: int): void {
+        const windows = [];
+        for (let i = 0; i < taskRepeater.count; ++i) {
+            const task = taskRepeater.itemAt(i) as Task;
+            if (!task || task.model.IsLauncher || task.model.IsStartup) {
+                continue;
+            }
+            if (task.model.IsGroupParent) {
+                for (let j = 0; j < tasksModel.rowCount(task.modelIndex()); ++j) {
+                    windows.push(tasksModel.makeModelIndex(i, j));
+                }
+            } else if (task.model.IsWindow) {
+                windows.push(task.modelIndex());
+            }
+        }
+        const active = windows.findIndex(index => tasksModel.data(index, TaskManager.AbstractTasksModel.IsActive));
+        if (active !== -1) {
+            tasksModel.requestActivate(windows[(active + direction + windows.length) % windows.length]);
+        }
+    }
+
+    function moveActiveTask(direction: int): void {
+        if (tasksModel.count === 0) {
+            return;
+        }
+        Plasmoid.configuration.sortingStrategy = 1; // Manual
+        const active = tasksModel.activeTask;
+        if (!active.valid) {
+            return;
+        }
+        const row = active.parent.valid ? active.parent.row : active.row;
+        const destination = row + direction;
+        if (destination >= 0 && destination < tasksModel.count) {
+            tasksModel.move(row, destination);
         }
     }
 
