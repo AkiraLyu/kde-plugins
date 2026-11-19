@@ -8,7 +8,7 @@ Personal Plasma 6 plugins, translucent themes and KDE settings.
 | [adjustable-task-manager](docs/adjustable-task-manager/README.md) | Task manager with configurable spacing and width |
 | `kate-translucent-bars` | Kate translucent bars and session launcher |
 | `wechat-glass-live` | KWin effect for WeChat bars on XWayland and Wayland, with control command |
-| `darkly-translucent` | Static Darkly 0.5.42 theme with backgrounds at 60% opacity |
+| `darkly-translucent` | Static Darkly 0.5.45 theme with backgrounds at 60% opacity |
 | `kde-config` | Darkly/KWin settings, theme switcher and configuration command |
 
 Arch packages are maintained in [AkiraLyu/pkgbuilds](https://github.com/AkiraLyu/pkgbuilds).
